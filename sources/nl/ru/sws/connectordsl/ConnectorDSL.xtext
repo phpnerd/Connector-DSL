@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) Thomas Nägele and contributors. All rights reserved.
+ * Licensed under the MIT license. See LICENSE file in the project root for details.
+*/
+
+grammar nl.ru.sws.connectordsl.ConnectorDSL with org.eclipse.xtext.common.Terminals
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+generate connectorDSL "http://www.ru.nl/sws/connectordsl/ConnectorDSL"
+
+Model:
+    config=Configuration
+	containers+=Container+
+	(handler=Handler)?
+;
+
+Configuration:
+    'Server' '{'
+        server=SocketConfig
+    '}'
+    'Client' '{'
+        client=SocketConfig
+    '}'
+    'Base' base=[Container]
+;
+
+SocketConfig:
+    'Name' name=ID
+    'Protocol' protocol=Protocol
+    'Type' type=ComType
+;
+
+Handler:
+    'Handler' handler=STRING
+;
+
+Container:
+	"DataType" name=ID ('responds' responds=[Container] '(' identifier=ComponentReference ')')? "{"
+		"Components" "{"
+			components += Component+
+		"}"
+		(fromSocket ?= "FromSocket")? 
+	"}"
+;
+
+ComponentReference:
+    container=[Container] '.' component=[Component]
+;
+
+Component:
+	type=ComponentType
+	(
+		  ("[" count=[Component] "]")
+		| ("(" byteCount=[Component] ")")
+	)?
+	name=ID
+	(optional ?= "optional")?
+;
+
+ComponentType:
+    ConditionalType | DataType
+;
+
+ConditionalType:
+    "{" component=[Component] "|" conditions+=Condition ("," conditions+=Condition)* "}"
+;
+
+Condition:
+	value=HEXPAIR "=>" type=ComponentType
+;
+
+DataType:
+	dataType=BuiltinDataType | container=[Container] 
+;
+
+enum BuiltinDataType:
+	  none = "None"
+	| uint8 = "uint8"
+	| ushort = "ushort"
+	| uint = "uint"
+	| ulong = "ulong"
+	| int8 = "int8"
+	| short = "short"
+	| int = "int"
+	| long = "long"
+	| float = "float"
+	| boolean = "bool"
+	| bytes = "bytes"
+	| string = "string"
+;
+
+enum Protocol:
+      tcp = "TCP"
+    | udp = "UDP"
+;
+
+enum ComType:
+      bytes = "bytes"
+    | json = "json"
+;
+
+terminal HEXPAIR returns ecore::EString:
+  ('0x'|'x') (HEXCHAR HEXCHAR)+
+;
+
+terminal HEXCHAR returns ecore::EChar:
+  ('0'..'9'|'A'..'F'|'a'..'f')
+;

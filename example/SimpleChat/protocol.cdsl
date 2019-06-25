@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) Thomas Nägele and contributors. All rights reserved.
+ * Licensed under the MIT license. See LICENSE file in the project root for details.
+*/
+
+Server {
+  Name ChatServer
+  Protocol TCP
+  Type bytes
+}
+Client {
+  Name ChatClient
+  Protocol TCP
+  Type json
+}
+Base Message
+
+DataType Message {
+  Components {
+    User Sender
+    string Receipient
+    string Message
+    uint8 HasAttachment
+    { HasAttachment |   // Here, the type of Attachment depends on the value of HasAttachment
+      0x00 => None,     // None when HasAttachment == 0x00
+      0x01 => string    // string when HasAttachment == 0x01
+    } Attachment
+  }
+}
+
+DataType User {
+  Components {
+    uint user
+    string username
+    string email
+  }
+}
